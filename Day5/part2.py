@@ -1,3 +1,7 @@
+import time
+
+start_time = time.time()
+
 def find_range_intersection(range1, range2):
     start1, end1 = range1
     start2, end2 = range2
@@ -57,3 +61,4 @@ for transform in transformations:
     current_ranges = new_ranges
 
 print(min([range[0] for range in current_ranges]))
+print((time.time() - start_time) * 1000)

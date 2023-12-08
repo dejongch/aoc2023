@@ -1,0 +1,76 @@
+import re
+from collections import defaultdict
+regex = r"(turn on|turn off|toggle) (\d*),(\d*) through (\d*),(\d*)"
+
+commands_dict = {
+    "turn on": lambda x: 1,
+    "turn off": lambda x: -1,
+    "toggle": lambda x: -x
+}
+
+def get_updated_ranges(range1, range2, current_state, command):
+    start1, end1 = range1
+    start2, end2 = range2
+
+    # Check for no overlap
+    if end1 < start2 or end2 < start1:
+        return [(start1, end1, current_state)]
+
+    # Calculate the intersection
+    start_intersection = max(start1, start2)
+    end_intersection = min(end1, end2)
+
+    new_ranges = [
+        (start_intersection, end_intersection, commands_dict[command](current_state))
+    ]
+
+    if start_intersection > start1:
+        new_ranges = [(start1, start_intersection-1, current_state)] + new_ranges
+    if end_intersection < end1:
+        new_ranges = new_ranges + [(end_intersection+1, end1, current_state)]
+
+    return merge_contiguous_ranges(new_ranges)
+
+def merge_contiguous_ranges(ranges):
+    if not ranges:
+        return []
+
+    merged_ranges = [ranges[0]]
+
+    for start, end, state in ranges[1:]:
+        prev_start, prev_end, prev_state = merged_ranges[-1]
+
+        if prev_end >= start and prev_state == state:
+            merged_ranges[-1] = (prev_start, max(end, prev_end), state)
+        else:
+            merged_ranges.append((start, end, state))
+
+    return merged_ranges
+
+lights: dict[int, list[tuple[int,int,int]]] = {}
+with open("input.txt", 'r') as file:
+    for line in file:
+        command, start_x, start_y, end_x, end_y = re.match(regex, line.strip()).groups()
+        start_x = int(start_x)
+        end_x = int(end_x)
+        start_y = int(start_y)
+        end_y = int(end_y)
+        
+        for y in range(start_y, end_y + 1):
+            new_ranges = []
+            current_ranges = lights.get(y)
+            if not current_ranges:
+                current_ranges = [(0,999,-1)]
+            for range_start, range_end, current_state in current_ranges:
+                new_ranges = new_ranges + get_updated_ranges((range_start, range_end), (start_x, end_x), current_state, command)
+            lights[y] = merge_contiguous_ranges(new_ranges)
+
+light_count = 0
+for ranges in lights.values():
+    for range_start, range_end, state in ranges:
+        if state == 1:
+            lights += range_end-range_start
+
+print(light_count)
+
+        
