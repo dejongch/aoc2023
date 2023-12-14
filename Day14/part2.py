@@ -72,9 +72,3 @@ for index in range(size):
     weight += current_map[index].count("O") * (size-index)
 
 print(weight)
-
-print(rotate_map_clockwise.cache_info().hits)
-print(rotate_map_counterclockwise.cache_info().hits)
-print(tilt_row.cache_info().hits)
-print(tilt_map.cache_info().hits)
-print(cycle_map.cache_info().hits)
