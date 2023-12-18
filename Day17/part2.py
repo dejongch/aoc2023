@@ -15,10 +15,12 @@ transforms = {
 }
 
 map = []
+string_map = []
 
 with open("input.txt", 'r') as file:
     for line in file:
         map.append([int(item) for item in line.strip()])
+        string_map.append([char for char in line.strip()])
 
 def find_path(map):
     start = (0,0)
@@ -44,15 +46,17 @@ def find_path(map):
     
     open_set = []
     open_set_dict = {}
-    heapq.heappush(open_set, (0 + heuristic(start), 0, start, Directions.east, 0))
+    heapq.heappush(open_set, (0 + heuristic(start), 0, start, Directions.east, 0, None))
     open_set_dict[(start, Directions.east, 0)] = 0
     visited_states = set()
 
     while open_set:
-        _, heat_lost, location, direction, repeated_direction_count = heapq.heappop(open_set)
+        _, heat_lost, location, direction, repeated_direction_count, parent = heapq.heappop(open_set)
+
+        path_dict_item = {"location": location, "direction": direction, "parent": parent}
 
         if location[0] == end[0] and location[1] == end[1] and repeated_direction_count > 3:
-            return heat_lost
+            return heat_lost, path_dict_item
         
         visited_states.add((location, direction, repeated_direction_count))
         del open_set_dict[(location, direction, repeated_direction_count)]
@@ -76,10 +80,23 @@ def find_path(map):
                     (previous_hit:=open_set_dict.get((new_location, new_direction, new_repeated_direction_count))) is None
                     or previous_hit > new_heat_loss
                 ):
-                    heapq.heappush(open_set, (new_heat_loss + heuristic(new_location), new_heat_loss, new_location, new_direction, new_repeated_direction_count))
+                    heapq.heappush(open_set, (new_heat_loss + heuristic(new_location), new_heat_loss, new_location, new_direction, new_repeated_direction_count, path_dict_item))
                     open_set_dict[(new_location, new_direction, new_repeated_direction_count)] = new_heat_loss
     
     return float('inf')
 
-heat_loss = find_path(map)
+heat_loss, current_node = find_path(map)
+
+symbols = {
+    Directions.north: "^",
+    Directions.south: "V",
+    Directions.east: ">",
+    Directions.west: "<",
+}
+
+while current_node is not None:
+    string_map[current_node["location"][1]][current_node["location"][0]] = symbols[current_node["direction"]]
+    current_node = current_node["parent"]
+for line in string_map:
+    print(line)
 print(heat_loss)
